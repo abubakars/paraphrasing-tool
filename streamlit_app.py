@@ -110,7 +110,3 @@ if st.button("Paraphrase & Correct"):
         st.write(corrected)
     else:
         st.warning("Please enter some text.")
-
-# Developer credit
-st.markdown("---")
-st.markdown("**Developed by Abubakar Sani**")
