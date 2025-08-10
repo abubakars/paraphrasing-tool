@@ -8,11 +8,11 @@ import re
 nltk.download("wordnet")
 nltk.download("omw-1.4")
 
-st.set_page_config(page_title="Advanced Academic Paraphraser", layout="wide")
-st.title("Professional Academic & Scientific Paraphraser (No AI)")
+st.set_page_config(page_title="Academic Paraphraser", layout="wide")
+st.title("Academic & Scientific Paraphraser")
 
 # --- Phrase bank for academic tone ---
-phrase_replacements = {
+phrase_replacements =  {
     "in order to": "to",
     "due to the fact that": "because",
     "in the course of": "during",
@@ -26,7 +26,27 @@ phrase_replacements = {
     "this shows that": "this demonstrates that",
     "this means": "this indicates",
     "good": "beneficial",
-    "bad": "detrimental"
+    "bad": "detrimental",
+    "at this point in time": "currently",
+    "has the ability to": "can",
+    "make use of": "utilize",
+    "in the event that": "if",
+    "prior to": "before",
+    "subsequent to": "after",
+    "at the present time": "presently",
+    "a large number of": "many",
+    "plays a role in": "contributes to",
+    "take into consideration": "consider",
+    "is responsible for": "causes",
+    "give rise to": "generate",
+    "based on the fact that": "because",
+    "carry out": "conduct",
+    "come up with": "devise",
+    "find out": "determine",
+    "look into": "investigate",
+    "point out": "highlight",
+    "bring about": "cause",
+    "put forward": "propose"
 }
 
 # Synonym preference for academic vocabulary
