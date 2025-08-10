@@ -9,7 +9,7 @@ nltk.download("wordnet")
 nltk.download("omw-1.4")
 
 st.set_page_config(page_title="Academic Paraphraser", layout="wide")
-st.title("Professional Academic & Scientific Paraphraser (No AI, No Roman Numbers)")
+st.title("Academic & Scientific Paraphraser")
 
 # Phrase replacements for more formal tone
 phrase_replacements =  {
