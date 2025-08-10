@@ -4,29 +4,73 @@ from nltk.corpus import wordnet as wn
 import random
 import re
 
-# Ensure small datasets are available
+# Download small datasets (safe for Streamlit Cloud)
 nltk.download("wordnet")
 nltk.download("omw-1.4")
 
-st.set_page_config(page_title="Simple Academic Paraphraser", layout="wide")
-st.title("Simple Rule-Based Paraphraser (No AI)")
+st.set_page_config(page_title="Humanized Academic Paraphraser", layout="wide")
+st.title("Humanized Academic Paraphraser (No AI)")
+
+# --- Academic phrase bank (for tone improvement) ---
+phrase_replacements = {
+    "in order to": "to",
+    "due to the fact that": "because",
+    "in the course of": "during",
+    "it is important to note that": "notably",
+    "a number of": "several",
+    "with regard to": "regarding",
+    "on the other hand": "conversely",
+    "as a result": "therefore",
+    "in addition": "moreover",
+    "for the purpose of": "for"
+}
+
+# Common academic-friendly synonyms filter
+common_academic_words = set([
+    "method", "approach", "process", "concept", "analysis",
+    "data", "information", "research", "study", "finding",
+    "increase", "decrease", "significant", "relevant",
+    "important", "use", "apply", "result", "impact", "affect"
+])
 
 def get_synonym(word):
-    """Get one synonym from WordNet if available."""
+    """Get a natural academic synonym if available."""
     synsets = wn.synsets(word)
     synonyms = set()
     for syn in synsets:
         for lemma in syn.lemmas():
             name = lemma.name().replace("_", " ")
             if name.lower() != word.lower():
-                synonyms.add(name)
+                # Only keep simple words
+                if " " not in name and name.isalpha() and len(name) <= 12:
+                    synonyms.add(name)
+    # Filter for common academic feel
     if synonyms:
+        filtered = [s for s in synonyms if s.lower() in common_academic_words]
+        if filtered:
+            return random.choice(filtered)
         return random.choice(list(synonyms))
     return None
 
+def apply_phrase_bank(text):
+    """Replace phrases with academic-friendly versions."""
+    for old, new in phrase_replacements.items():
+        text = re.sub(rf"\b{re.escape(old)}\b", new, text, flags=re.IGNORECASE)
+    return text
+
+def add_transitions(text):
+    """Insert transitions to make flow more human."""
+    sentences = re.split(r'(?<=[.!?]) +', text)
+    transitions = ["However,", "Moreover,", "Therefore,"]
+    for i in range(1, len(sentences)):
+        if random.random() < 0.15:  # small chance to add a transition
+            sentences[i] = transitions[i % len(transitions)] + " " + sentences[i][0].lower() + sentences[i][1:]
+    return " ".join(sentences)
+
 def paraphrase(text, replace_prob=0.3):
-    """Replace words with synonyms at given probability."""
-    words = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)  # keep punctuation separate
+    """Replace words with synonyms and humanize tone."""
+    text = apply_phrase_bank(text)
+    words = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
     new_words = []
     for w in words:
         if re.match(r"^\w+$", w) and random.random() < replace_prob:
@@ -37,12 +81,14 @@ def paraphrase(text, replace_prob=0.3):
                 new_words.append(syn)
                 continue
         new_words.append(w)
-    return "".join(
+    result = "".join(
         [w if re.match(r"[^\w\s]", w) else " " + w for w in new_words]
     ).strip()
+    result = add_transitions(result)
+    return result
 
+# --- UI ---
 text = st.text_area("Paste your text here:", height=200)
-
 replace_strength = st.slider("Replacement strength", 0.0, 1.0, 0.3)
 
 if st.button("Paraphrase"):
