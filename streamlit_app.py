@@ -2,19 +2,15 @@ import streamlit as st
 import re
 import random
 import nltk
-import language_tool_python
 from nltk.corpus import wordnet as wn
 
-# Download NLTK data (only runs the first time)
+# Ensure NLTK data is downloaded
 nltk.download("punkt")
 nltk.download("averaged_perceptron_tagger")
 nltk.download("wordnet")
 nltk.download("omw-1.4")
 
-# Initialize grammar checker
-tool = language_tool_python.LanguageTool('en-US')
-
-# Preferred academic replacements
+# Preferred academic replacements for certain words
 preferred_academic_words = {
     "show": "demonstrate",
     "prove": "establish",
@@ -38,7 +34,7 @@ preferred_academic_words = {
     "main": "primary"
 }
 
-# Words for numbers to avoid changing
+# Number words list to protect from change
 number_words = {
     "zero","one","two","three","four","five","six","seven","eight","nine","ten",
     "eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen",
@@ -78,7 +74,7 @@ def paraphrase_text(text, strength=0.4):
     new_tokens = []
 
     for word, pos in pos_tags:
-        if re.match(r"^[^\w]+$", word):
+        if re.match(r"^[^\w]+$", word):  # Keep punctuation
             new_tokens.append(word)
             continue
 
@@ -90,23 +86,17 @@ def paraphrase_text(text, strength=0.4):
 
     return " ".join(new_tokens)
 
-# Grammar correction function
-def correct_grammar(text):
-    matches = tool.check(text)
-    return language_tool_python.utils.correct(text, matches)
-
 # Streamlit UI
-st.title("Academic Paraphrasing & Grammar Tool (Non-AI)")
-st.write("Rewrites text into an academic tone and checks grammar, preserving numbers. No AI used.")
+st.title("Academic Paraphrasing Tool (Non-AI)")
+st.write("Rewrites text into a more academic tone while preserving meaning and numbers. No AI used.")
 
 input_text = st.text_area("Enter your text:", height=200)
 strength = st.slider("Paraphrasing Strength", 0.0, 1.0, 0.4)
 
-if st.button("Paraphrase & Correct"):
+if st.button("Paraphrase"):
     if input_text.strip():
-        paraphrased = paraphrase_text(input_text, strength)
-        corrected = correct_grammar(paraphrased)
-        st.subheader("Paraphrased & Corrected Output")
-        st.write(corrected)
+        result = paraphrase_text(input_text, strength)
+        st.subheader("Paraphrased Output")
+        st.write(result)
     else:
         st.warning("Please enter some text.")
