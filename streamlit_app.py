@@ -4,14 +4,14 @@ from nltk.corpus import wordnet as wn
 import random
 import re
 
-# Download small datasets (safe for Streamlit Cloud)
+# Download small datasets
 nltk.download("wordnet")
 nltk.download("omw-1.4")
 
-st.set_page_config(page_title="Humanized Academic Paraphraser", layout="wide")
-st.title("Humanized Academic Paraphraser (No AI)")
+st.set_page_config(page_title="Academic Paraphraser", layout="wide")
+st.title("Academic Paraphraser")
 
-# --- Academic phrase bank (for tone improvement) ---
+# --- Academic phrase bank ---
 phrase_replacements = {
     "in order to": "to",
     "due to the fact that": "because",
@@ -41,10 +41,8 @@ def get_synonym(word):
         for lemma in syn.lemmas():
             name = lemma.name().replace("_", " ")
             if name.lower() != word.lower():
-                # Only keep simple words
                 if " " not in name and name.isalpha() and len(name) <= 12:
                     synonyms.add(name)
-    # Filter for common academic feel
     if synonyms:
         filtered = [s for s in synonyms if s.lower() in common_academic_words]
         if filtered:
@@ -63,16 +61,21 @@ def add_transitions(text):
     sentences = re.split(r'(?<=[.!?]) +', text)
     transitions = ["However,", "Moreover,", "Therefore,"]
     for i in range(1, len(sentences)):
-        if random.random() < 0.15:  # small chance to add a transition
+        if random.random() < 0.15:
             sentences[i] = transitions[i % len(transitions)] + " " + sentences[i][0].lower() + sentences[i][1:]
     return " ".join(sentences)
 
 def paraphrase(text, replace_prob=0.3):
-    """Replace words with synonyms and humanize tone."""
+    """Replace words with synonyms and humanize tone, preserving numbers."""
     text = apply_phrase_bank(text)
     words = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
     new_words = []
     for w in words:
+        # Skip numbers (integers, decimals, years, citations)
+        if re.match(r"^\d+([\.,]\d+)*%?$", w):
+            new_words.append(w)
+            continue
+        # Replace normal words with synonyms occasionally
         if re.match(r"^\w+$", w) and random.random() < replace_prob:
             syn = get_synonym(w)
             if syn:
