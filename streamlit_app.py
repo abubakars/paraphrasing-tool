@@ -4,14 +4,14 @@ from nltk.corpus import wordnet as wn
 import random
 import re
 
-# Download required datasets
+# Download datasets (small)
 nltk.download("wordnet")
 nltk.download("omw-1.4")
 
 st.set_page_config(page_title="Academic Paraphraser", layout="wide")
-st.title("Academic & Scientific Paraphraser")
+st.title("Professional Academic & Scientific Paraphraser (No AI, No Roman Numbers)")
 
-# --- Phrase bank for academic tone ---
+# Phrase replacements for more formal tone
 phrase_replacements =  {
     "in order to": "to",
     "due to the fact that": "because",
@@ -49,7 +49,7 @@ phrase_replacements =  {
     "put forward": "propose"
 }
 
-# Synonym preference for academic vocabulary
+# Preferred academic vocabulary
 preferred_academic_words = {
     "use": "utilize",
     "show": "demonstrate",
@@ -63,7 +63,7 @@ preferred_academic_words = {
 }
 
 def get_synonym(word):
-    """Get academic-friendly synonym if available."""
+    """Return academic synonym if available."""
     if word.lower() in preferred_academic_words:
         return preferred_academic_words[word.lower()].capitalize() if word[0].isupper() else preferred_academic_words[word.lower()]
     synsets = wn.synsets(word)
@@ -72,7 +72,7 @@ def get_synonym(word):
         for lemma in syn.lemmas():
             name = lemma.name().replace("_", " ")
             if name.lower() != word.lower():
-                if " " not in name and name.isalpha() and len(name) <= 15:
+                if name.isalpha() and len(name) <= 15:
                     synonyms.add(name)
     if synonyms:
         return random.choice(list(synonyms))
@@ -84,14 +84,14 @@ def apply_phrase_bank(text):
     return text
 
 def restructure_sentences(text):
-    """Reorder and combine sentences for academic tone."""
+    """Academic-style restructuring."""
     sentences = re.split(r'(?<=[.!?]) +', text)
     structured = []
     for s in sentences:
         s = s.strip()
         if not s:
             continue
-        # Move dependent clauses to the front for formality
+        # Reorder for formal flow
         s = re.sub(r"^(Because|Although|Since) (.+?), (.+)$", r"\1 \2, \3", s)
         # Merge short sentences
         if len(s.split()) < 8 and structured:
@@ -105,9 +105,13 @@ def paraphrase(text, replace_prob=0.3):
     words = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
     new_words = []
     for w in words:
-        # Keep numbers and citations untouched
-        if re.match(r"^\d+([\.,]\d+)*%?$", w) or re.match(r"^\(.*?,\s*\d{4}\)$", w):
+        # Keep numbers and avoid Roman numerals
+        if re.match(r"^\d+([\.,]\d+)*%?$", w):
             new_words.append(w)
+            continue
+        # Skip Roman numerals entirely
+        if re.match(r"^(?=[MDCLXVI])(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))$", w, flags=re.IGNORECASE):
+            new_words.append(w)  # Just keep original without converting
             continue
         if re.match(r"^\w+$", w) and random.random() < replace_prob:
             syn = get_synonym(w)
