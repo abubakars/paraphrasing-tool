@@ -4,14 +4,14 @@ from nltk.corpus import wordnet as wn
 import random
 import re
 
-# Download small datasets
+# Download required datasets
 nltk.download("wordnet")
 nltk.download("omw-1.4")
 
-st.set_page_config(page_title="Academic Paraphraser", layout="wide")
-st.title("Academic Paraphraser")
+st.set_page_config(page_title="Advanced Academic Paraphraser", layout="wide")
+st.title("Professional Academic & Scientific Paraphraser (No AI)")
 
-# --- Academic phrase bank ---
+# --- Phrase bank for academic tone ---
 phrase_replacements = {
     "in order to": "to",
     "due to the fact that": "because",
@@ -22,72 +22,81 @@ phrase_replacements = {
     "on the other hand": "conversely",
     "as a result": "therefore",
     "in addition": "moreover",
-    "for the purpose of": "for"
+    "for the purpose of": "for",
+    "this shows that": "this demonstrates that",
+    "this means": "this indicates",
+    "good": "beneficial",
+    "bad": "detrimental"
 }
 
-# Common academic-friendly synonyms filter
-common_academic_words = set([
-    "method", "approach", "process", "concept", "analysis",
-    "data", "information", "research", "study", "finding",
-    "increase", "decrease", "significant", "relevant",
-    "important", "use", "apply", "result", "impact", "affect"
-])
+# Synonym preference for academic vocabulary
+preferred_academic_words = {
+    "use": "utilize",
+    "show": "demonstrate",
+    "get": "obtain",
+    "find": "determine",
+    "start": "commence",
+    "end": "terminate",
+    "help": "assist",
+    "try": "attempt",
+    "need": "require"
+}
 
 def get_synonym(word):
-    """Get a natural academic synonym if available."""
+    """Get academic-friendly synonym if available."""
+    if word.lower() in preferred_academic_words:
+        return preferred_academic_words[word.lower()].capitalize() if word[0].isupper() else preferred_academic_words[word.lower()]
     synsets = wn.synsets(word)
     synonyms = set()
     for syn in synsets:
         for lemma in syn.lemmas():
             name = lemma.name().replace("_", " ")
             if name.lower() != word.lower():
-                if " " not in name and name.isalpha() and len(name) <= 12:
+                if " " not in name and name.isalpha() and len(name) <= 15:
                     synonyms.add(name)
     if synonyms:
-        filtered = [s for s in synonyms if s.lower() in common_academic_words]
-        if filtered:
-            return random.choice(filtered)
         return random.choice(list(synonyms))
     return None
 
 def apply_phrase_bank(text):
-    """Replace phrases with academic-friendly versions."""
     for old, new in phrase_replacements.items():
         text = re.sub(rf"\b{re.escape(old)}\b", new, text, flags=re.IGNORECASE)
     return text
 
-def add_transitions(text):
-    """Insert transitions to make flow more human."""
+def restructure_sentences(text):
+    """Reorder and combine sentences for academic tone."""
     sentences = re.split(r'(?<=[.!?]) +', text)
-    transitions = ["However,", "Moreover,", "Therefore,"]
-    for i in range(1, len(sentences)):
-        if random.random() < 0.15:
-            sentences[i] = transitions[i % len(transitions)] + " " + sentences[i][0].lower() + sentences[i][1:]
-    return " ".join(sentences)
+    structured = []
+    for s in sentences:
+        s = s.strip()
+        if not s:
+            continue
+        # Move dependent clauses to the front for formality
+        s = re.sub(r"^(Because|Although|Since) (.+?), (.+)$", r"\1 \2, \3", s)
+        # Merge short sentences
+        if len(s.split()) < 8 and structured:
+            structured[-1] = structured[-1].rstrip(".") + ", and " + s[0].lower() + s[1:]
+        else:
+            structured.append(s)
+    return " ".join(structured)
 
 def paraphrase(text, replace_prob=0.3):
-    """Replace words with synonyms and humanize tone, preserving numbers."""
     text = apply_phrase_bank(text)
     words = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
     new_words = []
     for w in words:
-        # Skip numbers (integers, decimals, years, citations)
-        if re.match(r"^\d+([\.,]\d+)*%?$", w):
+        # Keep numbers and citations untouched
+        if re.match(r"^\d+([\.,]\d+)*%?$", w) or re.match(r"^\(.*?,\s*\d{4}\)$", w):
             new_words.append(w)
             continue
-        # Replace normal words with synonyms occasionally
         if re.match(r"^\w+$", w) and random.random() < replace_prob:
             syn = get_synonym(w)
             if syn:
-                if w[0].isupper():
-                    syn = syn.capitalize()
-                new_words.append(syn)
+                new_words.append(syn if w.islower() else syn.capitalize())
                 continue
         new_words.append(w)
-    result = "".join(
-        [w if re.match(r"[^\w\s]", w) else " " + w for w in new_words]
-    ).strip()
-    result = add_transitions(result)
+    result = "".join([w if re.match(r"[^\w\s]", w) else " " + w for w in new_words]).strip()
+    result = restructure_sentences(result)
     return result
 
 # --- UI ---
